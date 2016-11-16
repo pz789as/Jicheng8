@@ -1,0 +1,7 @@
+rootProject.name = 'Jicheng8'
+
+include ':app'
+include ':react-native-social-auth'
+project(':react-native-social-auth').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-social-auth/android')
+include ':react-native-fbsdk'
+project(':react-native-fbsdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-fbsdk/android')

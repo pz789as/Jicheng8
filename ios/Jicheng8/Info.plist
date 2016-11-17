@@ -26,6 +26,26 @@
 				<string>fb1138830802874665</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.googleusercontent.apps.871409386922-een7v4oak4mon4lmmaum8ec5ugje3q4e</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.871409386922-een7v4oak4mon4lmmaum8ec5ugje3q4e</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.gjc.Jicheng8</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.gjc.Jicheng8</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>

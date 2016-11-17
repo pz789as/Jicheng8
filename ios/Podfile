@@ -6,8 +6,7 @@ target 'Jicheng8' do
   # use_frameworks!
 
   # Pods for Jicheng8
-  pod 'Fabric'
-  pod 'TwitterKit'
+  pod 'Google/SignIn'
 
   target 'Jicheng8Tests' do
     inherit! :search_paths

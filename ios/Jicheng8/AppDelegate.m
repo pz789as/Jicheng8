@@ -14,7 +14,7 @@
 #import <FBSDKCoreKit/FBSDKCoreKit.h>
 #import <Fabric/Fabric.h>
 #import <TwitterKit/TwitterKit.h>
-
+#import <GoogleSignIn/GoogleSignIn.h>
 
 @implementation AppDelegate
 
@@ -34,11 +34,18 @@
                            didFinishLaunchingWithOptions:launchOptions];
   [[Twitter sharedInstance] startWithConsumerKey:@"ewcswlzYnQPZqi8XPOxDvLgfc" consumerSecret:@"SvFgoj0l7yTyLwUNnpI2aiuWhA5WE5FXw2PTGdRC5KoyS5o0Tn"];
   [Fabric with:@[[Twitter class]]];
+  [GIDSignIn sharedInstance].clientID = @"871409386922-een7v4oak4mon4lmmaum8ec5ugje3q4e.apps.googleusercontent.com";
+//  [GIDSignIn sharedInstance].delegate = self;
 
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;
-  self.window.rootViewController = rootViewController;
+  self.navigationController = [[UINavigationController alloc] initWithRootViewController:rootViewController];
+  [self.navigationController setNavigationBarHidden:YES];
+  [self.navigationController setToolbarHidden:YES];
+  
+  self.window.rootViewController = self.navigationController;
+  
   [self.window makeKeyAndVisible];
   return YES;
 }
@@ -48,12 +55,13 @@
 }
 
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
-  BOOL handled = [[FBSDKApplicationDelegate sharedInstance] application:application
+  BOOL handledfb = [[FBSDKApplicationDelegate sharedInstance] application:application
                                                         openURL:url
                                               sourceApplication:sourceApplication
                                                      annotation:annotation];
   // 在此添加任意自定义逻辑。
-  return handled;
+  BOOL handledgi =[[GIDSignIn sharedInstance]handleURL:url sourceApplication:sourceApplication annotation:annotation];
+  return handledfb || handledgi;
 }
 
 @end

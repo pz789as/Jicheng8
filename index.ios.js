@@ -32,6 +32,10 @@ const {
 import TWTView from './TWTView.js';
 var TwitterLogin = NativeModules.TwitterLogin;
 const twLoginCB = new NativeEventEmitter(TwitterLogin);
+var GoogleLogin = NativeModules.GoogleLogin;
+const glLoginCB = new NativeEventEmitter(GoogleLogin);
+// var GoogleVC = NativeModules.GoogleVC;
+// console.log("1111", GoogleVC);
 
 export default class Jicheng8 extends Component {
   constructor(props){
@@ -45,15 +49,21 @@ export default class Jicheng8 extends Component {
       isWaiting: false,
       twLoginStatus: false,
       twIcon: null,
+      glName: '',
+      glEmail: '',
+      glLoginStatus: false,
     };
   }
   componentDidMount() {
     // this.PressToken();
     this.twListener = twLoginCB.addListener('twlCallback', this.twlCallback.bind(this));
+    this.glListener = glLoginCB.addListener('gglCallback', this.gglCallback.bind(this));
   }
   componentWillUnmount() {
     this.twListener && this.twListener.remove();
     this.twListener = null; 
+    this.glListener && this.glListener.remove();
+    this.glListener = null;
   }
   twlCallback(data){
     if (data.code == TwitterLogin.CB_CODE_ERROR){
@@ -102,6 +112,49 @@ export default class Jicheng8 extends Component {
       alert('欢迎回来，' + ret.name + '!');
     }
   }
+  gglCallback(data){
+    if (data.code == GoogleLogin.CB_CODE_ERROR){
+      var ret = JSON.parse(data.result);
+      if (ret.id == GoogleLogin.ERROR_LOGIN){
+        alert('登录失败：' + ret.dsc);
+      }else if (ret.id == GoogleLogin.ERROR_DISCONNECT){
+        alert('断开连接失败：' + ret.dsc);
+      }else {
+        alert("未知错误！");
+      }
+    }else if (data.code == GoogleLogin.CB_CODE_LOGIN){
+      var ret = JSON.parse(data.result);
+      console.log('登录成功：' + ret.fullName + '!');
+      this.setState({
+        glName: ret.fullName,
+        glEmail: ret.email,
+        glLoginStatus: true
+      });
+      alert('欢迎回来，' + ret.fullName + '!');
+    }else if (data.code == GoogleLogin.CB_CODE_LOGOUT){
+      this.setState({
+        glName: '',
+        glEmail: '',
+        glLoginStatus: false,
+      });
+      alert('登出成功！');
+    }else if (data.code == TwitterLogin.CB_CODE_EXPIRED){
+      if (data.result == TwitterLogin.EXPIRED_OUT){
+        console.log('登录已经过期');
+        this.LoginGoolge();
+      }else {
+        console.log('登录成功！');
+        this.LoginGoogleSilently();
+      }
+    }else if (data.code == GoogleLogin.CB_CODE_DISCONNECT){
+      this.setState({
+        glName: '',
+        glEmail: '',
+        glLoginStatus: false,
+      });
+      alert('登出成功：' + ret.fullName);
+    }
+  }
   setWaiting(bln){
     this.setState({
       isWaiting: bln,
@@ -139,7 +192,6 @@ export default class Jicheng8 extends Component {
         if (result.isCancelled){
           alert('Login cancelled');
         }else{
-          // alert('Login success with permissions: ' + result.grantedPermissions.toString());
           this.PressToken();
         }
       }, (error)=>{
@@ -155,9 +207,6 @@ export default class Jicheng8 extends Component {
     }else if (result.isCancelled){
       alert("login is cancelled.");
     }else {
-      // AccessToken.getCurrentAccessToken().then(data=>{
-      //   alert(data.accessToken.toString());
-      // });
       this.PressToken();
     }
   }
@@ -206,6 +255,25 @@ export default class Jicheng8 extends Component {
   GetInfoTwitter(){
     TwitterLogin.GetInfos();
   }
+  onGooglePress(){
+    if (this.state.glLoginStatus){
+      this.LogoutGoogle();
+    }else{
+      this.LoginGoolge();
+    }
+  }
+  LoginGoolge(){
+    GoogleLogin.Login();
+  }
+  LogoutGoogle(){
+    GoogleLogin.Logout();
+  }
+  LoginGoogleSilently(){
+    GoogleLogin.LoginSilently();
+  }
+  ExpiredGoogle(){
+    GoogleLogin.IsExpired();
+  }
   render() {
     return (
       <View style={styles.container}>
@@ -250,6 +318,17 @@ export default class Jicheng8 extends Component {
         <TouchableOpacity style={{marginTop: 10}} onPress={this.onTwitterPress.bind(this)}>
           <Text style={styles.instructions}>
             {this.state.twLoginStatus ? 'Twitter Logout' : 'Twitter Login'} 
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.instructions}>
+          GL用户：{this.state.glName}
+        </Text>
+        <Text style={styles.instructions}>
+          GL邮箱：{this.state.glEmail}
+        </Text>
+        <TouchableOpacity style={{marginTop: 10}} onPress={this.onGooglePress.bind(this)}>
+          <Text style={styles.instructions}>
+            {this.state.glLoginStatus ? 'Google Logout' : 'Google Login'} 
           </Text>
         </TouchableOpacity>
         {this.state.isWaiting ? 

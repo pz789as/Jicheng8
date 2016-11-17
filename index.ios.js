@@ -259,7 +259,7 @@ export default class Jicheng8 extends Component {
     if (this.state.glLoginStatus){
       this.LogoutGoogle();
     }else{
-      this.LoginGoolge();
+      this.ExpiredGoogle();
     }
   }
   LoginGoolge(){

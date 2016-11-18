@@ -40,10 +40,11 @@ const glLoginCB = new NativeEventEmitter(GoogleLogin);
 export default class Jicheng8 extends Component {
   constructor(props){
     super(props);
-    this.infoRequest = new GraphRequest('/me?fields=age_range,id,email,name,link', null, this._responseInfoCallback.bind(this));
+    this.infoRequest = new GraphRequest('/me?fields=age_range,id,email,name,link', null, this.fbInfoCallback.bind(this));
     this.state = {
       fbName: '',
       fbEmail: '',
+      fbLoginStatus: false,
       twName: '',
       twEmail: '',
       isWaiting: false,
@@ -55,7 +56,7 @@ export default class Jicheng8 extends Component {
     };
   }
   componentDidMount() {
-    // this.PressToken();
+    // this.ExpiredFacebook();
     this.twListener = twLoginCB.addListener('twlCallback', this.twlCallback.bind(this));
     this.glListener = glLoginCB.addListener('gglCallback', this.gglCallback.bind(this));
   }
@@ -138,8 +139,8 @@ export default class Jicheng8 extends Component {
         glLoginStatus: false,
       });
       alert('登出成功！');
-    }else if (data.code == TwitterLogin.CB_CODE_EXPIRED){
-      if (data.result == TwitterLogin.EXPIRED_OUT){
+    }else if (data.code == GoogleLogin.CB_CODE_EXPIRED){
+      if (data.result == GoogleLogin.EXPIRED_OUT){
         console.log('登录已经过期');
         this.LoginGoolge();
       }else {
@@ -160,46 +161,6 @@ export default class Jicheng8 extends Component {
       isWaiting: bln,
     });
   }
-  PressToken(){
-    this.setWaiting(true);
-    AccessToken.getCurrentAccessToken().then(data=>{
-      this.setWaiting(false);
-      if (data == null){
-        this.PressLogin();
-      }else {
-        var date = new Date();
-        var expirateDate = new Date();
-        expirateDate.setTime(data.expirationTime);
-        console.log(data.expirationTime);
-        console.log(expirateDate.toDateString());
-        if (date.valueOf() > data.expirationTime){
-          alert('登录过期了，重新登录');
-        }else{
-          // alert('欢迎回来！');
-          this.onPressUser();
-        }
-      }
-    }).catch(error=>{
-      this.setWaiting(false);
-      alert('getCurrentAccessToken error: ' + error.toString());
-    });
-  }
-  PressLogin(){
-    this.setWaiting(true);
-    LoginManager.logInWithReadPermissions(['public_profile', 'email']).then(
-      (result)=>{
-        this.setWaiting(false);
-        if (result.isCancelled){
-          alert('Login cancelled');
-        }else{
-          this.PressToken();
-        }
-      }, (error)=>{
-        this.setWaiting(false);
-        alert("Login fail with error: " + error);
-      }
-    );
-  }
   onLoginFinished(error, result){
     this.setWaiting(false);
     if (error){
@@ -207,7 +168,7 @@ export default class Jicheng8 extends Component {
     }else if (result.isCancelled){
       alert("login is cancelled.");
     }else {
-      this.PressToken();
+      this.ExpiredFacebook();
     }
   }
   onLogoutFinished(){
@@ -218,7 +179,7 @@ export default class Jicheng8 extends Component {
       });
     alert("logout.");
   }
-  _responseInfoCallback(error, result){
+  fbInfoCallback(error, result){
     this.setWaiting(false);
     if (error){
       alert('error fetching data: ' + error.toString());
@@ -228,11 +189,69 @@ export default class Jicheng8 extends Component {
       alert('欢迎回来，' + result.name + '!');
       this.setState({
         fbName: result.name,
-        fbEmail: result.email
+        fbEmail: result.email,
+        fbLoginStatus: true,
       });
     }
   }
-  onPressUser(){
+
+///-------------------------------------------------------------------
+
+  onFacebookPress(){
+    if (this.state.fbLoginStatus){
+      this.LogoutFacebook();
+    }else {
+      this.ExpiredFacebook();
+    }
+  }
+  LoginFacebook(){
+    LoginManager.logInWithReadPermissions(['public_profile', 'email']).then(
+      (result)=>{
+        this.setWaiting(false);
+        if (result.isCancelled){
+          alert('Login cancelled');
+        }else{
+          this.ExpiredFacebook();
+        }
+      }, (error)=>{
+        this.setWaiting(false);
+        alert("Login fail with error: " + error);
+      }
+    );
+  }
+  LogoutFacebook(){
+    LoginManager.logOut();
+    this.setWaiting(false);
+    this.setState({
+        fbName: '',
+        fbEmail: '',
+        fbLoginStatus: false,
+      });
+    alert("logout.");
+  }
+  ExpiredFacebook(){
+    AccessToken.getCurrentAccessToken().then(data=>{
+      this.setWaiting(false);
+      if (data == null){
+        this.LoginFacebook();
+      }else {
+        var date = new Date();
+        var expirateDate = new Date();
+        expirateDate.setTime(data.expirationTime);
+        console.log(data.expirationTime);
+        console.log(expirateDate.toDateString());
+        if (date.valueOf() > data.expirationTime){
+          alert('登录过期了，重新登录');
+        }else{
+          this.GetInfoFacebook();
+        }
+      }
+    }).catch(error=>{
+      this.setWaiting(false);
+      alert('getCurrentAccessToken error: ' + error.toString());
+    });
+  }
+  GetInfoFacebook(){
     this.setWaiting(true);
     new GraphRequestManager().addRequest(this.infoRequest).start();
   }
@@ -275,6 +294,14 @@ export default class Jicheng8 extends Component {
     GoogleLogin.IsExpired();
   }
   render() {
+    // <LoginButton readPermissions={["public_profile","email"]}
+    //       onLoginFinished={this.onLoginFinished.bind(this)}
+    //       onLogoutFinished={this.onLogoutFinished.bind(this)} />
+    //     <TouchableOpacity style={{marginTop: 10}} onPress={this.GetInfoFacebook.bind(this)}>
+    //       <Text style={styles.instructions}>
+    //         获取用户信息
+    //       </Text>
+    //     </TouchableOpacity>
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
@@ -283,24 +310,21 @@ export default class Jicheng8 extends Component {
         <Text style={styles.instructions}>
           To get started, edit index.ios.js
         </Text>
-        <Text style={styles.instructions}>
+        <Text style={[styles.instructions, {marginBottom: 10}]}>
           Press Cmd+R to reload,{'\n'}
           Cmd+D or shake for dev menu
         </Text>
-        <LoginButton readPermissions={["public_profile","email"]}
-          onLoginFinished={this.onLoginFinished.bind(this)}
-          onLogoutFinished={this.onLogoutFinished.bind(this)} />
-        <TouchableOpacity style={{marginTop: 10}} onPress={this.onPressUser.bind(this)}>
-          <Text style={styles.instructions}>
-            获取用户信息
-          </Text>
-        </TouchableOpacity>
         <Text style={styles.instructions}>
           FB用户：{this.state.fbName}
         </Text>
         <Text style={styles.instructions}>
           FB邮件：{this.state.fbEmail}
         </Text>
+        <TouchableOpacity style={{marginBottom: 10}} onPress={this.onFacebookPress.bind(this)}>
+          <Text style={[styles.instructions, {backgroundColor: this.state.fbLoginStatus ? 'red' : 'green'}]}>
+            {this.state.fbLoginStatus ? 'Facebook Logout' : 'Facebook Login'} 
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.instructions}>
           TW用户：{this.state.twName}
         </Text>
@@ -315,8 +339,8 @@ export default class Jicheng8 extends Component {
           null
           }
         </View>
-        <TouchableOpacity style={{marginTop: 10}} onPress={this.onTwitterPress.bind(this)}>
-          <Text style={styles.instructions}>
+        <TouchableOpacity style={{marginBottom: 10}} onPress={this.onTwitterPress.bind(this)}>
+          <Text style={[styles.instructions, {backgroundColor: this.state.twLoginStatus ? 'red' : 'green'}]}>
             {this.state.twLoginStatus ? 'Twitter Logout' : 'Twitter Login'} 
           </Text>
         </TouchableOpacity>
@@ -326,8 +350,8 @@ export default class Jicheng8 extends Component {
         <Text style={styles.instructions}>
           GL邮箱：{this.state.glEmail}
         </Text>
-        <TouchableOpacity style={{marginTop: 10}} onPress={this.onGooglePress.bind(this)}>
-          <Text style={styles.instructions}>
+        <TouchableOpacity style={{marginBottom: 10}} onPress={this.onGooglePress.bind(this)}>
+          <Text style={[styles.instructions, {backgroundColor: this.state.glLoginStatus ? 'red' : 'green'}]}>
             {this.state.glLoginStatus ? 'Google Logout' : 'Google Login'} 
           </Text>
         </TouchableOpacity>
